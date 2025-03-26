@@ -3,6 +3,8 @@ A toy thermal fluid modeling project
 
 TODO:
 
-- [ ] Numerical methods?
+- [x] Numerical methods?
+- [x] Split things into modules
+- [ ] CSV output
 - [ ] Node architecture?
-- [ ] Fluid properties?
+- [ ] Fluid properties? (Let's start with good old perfect gases)
