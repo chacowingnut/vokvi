@@ -5,7 +5,7 @@ TODO:
 
 - [x] Numerical methods?
 - [x] Split things into modules
-- [ ] Boundary node
+- [x] Actual compressible orifice
+- [x] Fluid properties? (Let's start with good old perfect gases)
+- [ ] Integrated model
 - [ ] CSV output
-- [ ] Node architecture?
-- [ ] Fluid properties? (Let's start with good old perfect gases)

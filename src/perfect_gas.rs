@@ -1,5 +1,3 @@
-use nalgebra::SVector;
-
 #[derive(Clone, Copy, Debug)]
 pub struct PerfectGas {
     pub r_specific: f32,
@@ -9,14 +7,14 @@ pub struct PerfectGas {
 #[derive(Debug)]
 pub struct PerfectGasVol {
     gas: PerfectGas,
-    v: f32,
-    p: f32,
+    pub v: f32,
+    pub p: f32,
     t: f32,
     pub rho: f32,
     pub u: f32,
-    h: f32,
-    mdot_net: f32,
-    qdot_net: f32,
+    pub h: f32,
+    pub mdot_net: f32,
+    pub qdot_net: f32,
 }
 
 impl PerfectGasVol {
@@ -35,7 +33,7 @@ impl PerfectGasVol {
         vol.pt_update(p, t);
         return vol;
     }
-    fn pt_update(&mut self, p: f32, t: f32) {
+    pub fn pt_update(&mut self, p: f32, t: f32) {
         let cp = self.gas.r_specific / (1.0 - 1.0 / self.gas.gamma);
         self.p = p;
         self.t = t;
@@ -43,7 +41,7 @@ impl PerfectGasVol {
         self.u = t * cp / self.gas.gamma;
         self.h = cp * t;
     }
-    fn ru_update(&mut self, rho: f32, u: f32) {
+    pub fn ru_update(&mut self, rho: f32, u: f32) {
         let cp = self.gas.r_specific / (1.0 - 1.0 / self.gas.gamma);
         self.rho = rho;
         self.u = u;
@@ -58,7 +56,7 @@ pub struct CompOrifice {
     inlet_index: usize,
     outlet_index: usize,
     cda: f32,
-    mdot: f32,
+    pub mdot: f32,
 }
 
 impl CompOrifice {
@@ -70,10 +68,31 @@ impl CompOrifice {
             mdot: 0.0,
         };
     }
-    fn interact(&mut self, vols: &mut [PerfectGasVol]) {
-        self.mdot = self.cda * (vols[self.inlet_index].p - vols[self.outlet_index].p);
-        vols[self.inlet_index].mdot_net -= self.mdot;
-        vols[self.outlet_index].mdot_net += self.mdot;
+    pub fn interact(&mut self, vols: &mut [PerfectGasVol]) {
+        let i_up: usize;
+        let i_dn: usize;
+        if vols[self.inlet_index].p > vols[self.outlet_index].p {
+            i_up = self.inlet_index;
+            i_dn = self.outlet_index;
+        } else {
+            i_up = self.outlet_index;
+            i_dn = self.inlet_index;
+        }
+        let y = vols[i_up].gas.gamma;
+        let pr_crit = f32::powf(2.0 / (y + 1.0), y / (y - 1.0));
+        let pr = f32::max(vols[i_dn].p / vols[i_up].p, pr_crit);
+        let rho = vols[i_up].rho;
+        self.mdot = self.cda
+            * f32::sqrt(
+                2.0 * y / (y - 1.0)
+                    * rho
+                    * vols[i_up].p
+                    * (pr.powf(2.0 / y) - pr.powf((y + 1.0) / y)),
+            );
+        vols[i_up].mdot_net -= self.mdot;
+        vols[i_up].qdot_net -= self.mdot * vols[i_up].h;
+        vols[i_dn].mdot_net += self.mdot;
+        vols[i_dn].qdot_net += self.mdot * vols[i_up].h;
     }
 }
 
